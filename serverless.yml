@@ -1,0 +1,126 @@
+org: rudhraio
+app: sockets
+service: alphachats
+frameworkVersion: "3"
+
+custom:
+  usersTable: "users-table-${sls:stage}"
+  chatsTable: "chats-table-${sls:stage}"
+  messagesTable: "messages-table-${sls:stage}"
+
+  usernameIndex: "username-index"
+  userActiveIndex: "user-active-index"
+  activeIndex: "active-index"
+  messageActiveIndex: "message-active-index"
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ap-south-1
+  iam:
+    role:
+      name: sls-chats
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:*
+          Resource:
+            - Fn::Sub: "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${self:custom.usersTable}"
+            - Fn::Sub: "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${self:custom.usersTable}/*"
+            - Fn::Sub: "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${self:custom.chatsTable}"
+            - Fn::Sub: "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${self:custom.chatsTable}/*"
+            - Fn::Sub: "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${self:custom.messagesTable}"
+            - Fn::Sub: "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${self:custom.messagesTable}/*"
+  environment:
+    NODE_ENV: prod
+
+    USERS_TABLE: ${self:custom.usersTable}
+    CHATS_TABLE: ${self:custom.chatsTable}
+    MESSAGES_TABLE: ${self:custom.messagesTable}
+
+    USERNAME_INDEX: ${self:custom.usernameIndex}
+
+    USER_ACTIVE_INDEX: ${self:custom.userActiveIndex}
+    MESSAGE_ACTIVE_INDEX: ${self:custom.messageActiveIndex}
+    ACTIVE_INDEX: ${self:custom.activeIndex}
+
+    SECRET_KEY: 9MbsiMAcoPhoCaRSomItiCeMUtrar<~2{Ud(PRoisOnaBAbLeITYRinceSpON6r3
+
+functions:
+  api:
+    handler: server.handler
+    events:
+      - httpApi: "*"
+
+resources:
+  Resources:
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: username
+            AttributeType: S
+          - AttributeName: active
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: ${self:custom.usernameIndex}
+            KeySchema:
+              - AttributeName: username
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+          - IndexName: ${self:custom.userActiveIndex}
+            KeySchema:
+              - AttributeName: active
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:custom.usersTable}
+
+    ChatsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: active
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: ${self:custom.activeIndex}
+            KeySchema:
+              - AttributeName: active
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:custom.chatsTable}
+
+    MessagesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: active
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: ${self:custom.messageActiveIndex}
+            KeySchema:
+              - AttributeName: active
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:custom.messagesTable}
