@@ -38,13 +38,27 @@ chatsPost.post("/", authorizeToken, validator(validData), async (req, res) => {
             }
             chat = await getChatByMembers(req?.user?.id, touser?.id);
             if (!chat?.id) {
-                chat = await createChat({ userslist: [req?.user?.id, touser?.id] });
+                const usersdetails = [
+                    {
+                        id: req?.user?.id,
+                        fullname: req?.user?.fullname,
+                        username: req.user.username,
+                        image: req.user.image
+                    },
+                    {
+                        id: touser?.id,
+                        fullname: touser?.fullname,
+                        username: touser?.username,
+                        image: touser?.image
+                    }
+                ]
+                chat = await createChat({ userslist: [req?.user?.id, touser?.id], usersdetails });
             }
         } else {
             chat = await getChatsById(to);
         }
 
-        if (!chat.id) {
+        if (!chat?.id) {
             return notFoundResponse(res, "no matching chat found");
         }
 

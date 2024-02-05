@@ -9,6 +9,7 @@ import convertToJson from "../utils/helpers/dynamo-converter.js";
 class Chats {
     constructor(
         userslist,
+        usersdetails,
         ctype = "one-to-one",
         visibility = "public",
         name = undefined,
@@ -20,6 +21,7 @@ class Chats {
     ) {
         this.id = id;
         this.userslist = userslist;
+        this.usersdetails = usersdetails;
         this.name = name;
         this.image = image ? image : "no-image.png";
         this.ctype = ctype;
@@ -39,15 +41,16 @@ const ACTIVE_INDEX = process.env.ACTIVE_INDEX;
 
 export async function createChat(data) {
     try {
-        const { userslist } = data;
-        const chats = new Chats(userslist);
+        const { userslist, usersdetails } = data;
+        const chat = new Chats(userslist, usersdetails);
 
         const params = {
             TableName: CHATS_TABLE,
-            Item: chats,
+            Item: chat,
         };
 
         await dynamoDbClient.send(new PutCommand(params), { removeUndefinedValues: false });
+        return chat
     } catch (error) {
         logger(`[ERR]: Error querying items:, ${error}`);
         return {};
@@ -70,7 +73,6 @@ export async function getChatsByUser(userid) {
     try {
         const result = await dynamoDbClient.send(new QueryCommand(params));
         const items = convertToJson(result.Items);
-        console.log("result", result);
         chat = items || {};
     } catch (error) {
         logger(`[ERR]: Error querying items:, ${error}`);
@@ -97,7 +99,6 @@ export async function getChatByMembers(userone, usertwo) {
     try {
         const result = await dynamoDbClient.send(new QueryCommand(params));
         const items = convertToJson(result.Items);
-        console.log("result", result);
         chat = items[0] || {};
     } catch (error) {
         logger(`[ERR]: Error querying items:, ${error}`);
@@ -120,7 +121,6 @@ export async function getChatsById(chatid) {
     try {
         const result = await dynamoDbClient.send(new QueryCommand(params));
         const items = convertToJson(result.Items);
-        console.log("result", result);
         chat = items[0] || {};
     } catch (error) {
         logger(`[ERR]: Error querying items:, ${error}`);

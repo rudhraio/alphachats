@@ -1,9 +1,15 @@
 import express from "express";
+import cors from 'cors';
 
 import v1 from "./v1/router.js";
 
 export const app = express();
 app.use(express.json());
+
+app.use(cors({
+    origin: '*',
+    credentials: true,
+}));
 
 app.get('/api/ping', (_, res) => {
     return res.status(200).json({

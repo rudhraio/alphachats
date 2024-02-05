@@ -22,7 +22,7 @@ chatsGet.get("/:id", authorizeToken, async (req, res) => {
     try {
         const { id } = req.params;
         const chat = await getChatsById(id);
-        if (!chat?.id) {
+        if (!chat?.id || !chat.userslist.includes(req.user.id)) {
             return notFoundResponse(res, "no chat found");
         };
 

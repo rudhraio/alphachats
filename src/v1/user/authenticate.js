@@ -36,6 +36,8 @@ authenticateRouter.post("/", validator(validData), async (req, res) => {
 
         const tokenInfo = {
             id: user.id,
+            fullname: user.fullname,
+            image: user.image,
             username: user.username,
             utype: user.utype,
             ugroup: user.ugroup
