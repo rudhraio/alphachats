@@ -46,11 +46,30 @@ provider:
 
     SECRET_KEY: 9MbsiMAcoPhoCaRSomItiCeMUtrar<~2{Ud(PRoisOnaBAbLeITYRinceSpON6r3
 
+    REGION: ${self:provider.region}
+    END_POINT: "https://e9h7ui8pcd.execute-api.ap-south-1.amazonaws.com/dev?token=SERVER"
+
 functions:
   api:
     handler: server.handler
     events:
       - httpApi: "*"
+  
+  on-socket-connect:
+    handler: src/wss/socket.connect
+    events:
+      - websocket:
+          route: $connect
+  on-socket-disconnect:
+    handler: src/wss/socket.disconnect
+    events:
+      - websocket:
+          route: $disconnect
+  on-socket-message:
+    handler: src/wss/socket.message
+    events:
+      - websocket:
+          route: message
 
 resources:
   Resources:

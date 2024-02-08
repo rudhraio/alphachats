@@ -1,8 +1,9 @@
+import { ApiGatewayManagementApiClient } from "@aws-sdk/client-apigatewaymanagementapi";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 
 const credentials = {
-    region: "ap-south-1",
+    region: process.env.REGION,
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
 };
@@ -18,4 +19,9 @@ if (process.env.NODE_ENV === "dev") {
 const dynamoDbClient = DynamoDBDocumentClient.from(client);
 
 
-export { dynamoDbClient };
+const api = new ApiGatewayManagementApiClient({
+    endpoint: process.env.END_POINT,
+});
+
+
+export { dynamoDbClient, api };
