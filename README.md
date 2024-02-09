@@ -1,3 +1,3 @@
-#AlphaChats
+# AlphaChats
 
 Serverless chat application
