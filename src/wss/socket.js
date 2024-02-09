@@ -65,7 +65,9 @@ async function message(event) {
 };
 
 
-async function boradcastMessage(to, from, payload, type) {
+export async function boradcastMessage(to, from, payload, type) {
+
+
     let members = [];
     if (Array.isArray(to)) {
         members = await getMultipleUsers(to);
@@ -74,7 +76,7 @@ async function boradcastMessage(to, from, payload, type) {
     }
     const count = members.length - 1;
 
-    return sendToMembers(members, count, payload, type, from);
+    return await sendToMembers(members, count, payload, type, from);
 
 }
 
@@ -82,17 +84,17 @@ async function sendToMembers(members, count, payload, type, from) {
     if (count < 0) return;
     const user = members[count] || {};
     let connectionCount = user?.connections.length - 1;
-    await sendMessage(user?.connections, connectionCount, payload, type, from);
+    await sendMessage(user?.connections, connectionCount, payload, type, from, user?.id);
     return await sendToMembers(members, --count, payload, type, from);
 }
 
-async function sendMessage(connections, count, payload, type, from) {
+async function sendMessage(connections, count, payload, type, from, to) {
     if (count < 0) return;
 
     try {
         let params = {
             ConnectionId: connections[count],
-            Data: JSON.stringify({ payload, from, type, to: connections[count] })
+            Data: JSON.stringify({ payload, from, type, to: to })
         }
         await api.send(new PostToConnectionCommand(params));
     } catch (error) {

@@ -8,6 +8,7 @@ import { createChat, getChatByMembers, getChatsById } from "../../models/chats.m
 import { body } from "express-validator";
 import { getByUserId, getByUsername } from "../../models/user.model.js";
 import { createMessage } from "../../models/message.model.js";
+import { boradcastMessage } from "../../wss/socket.js";
 
 const chatsPost = express.Router();
 
@@ -63,6 +64,11 @@ chatsPost.post("/", authorizeToken, validator(validData), async (req, res) => {
         }
 
         await createMessage({ chatid: chat?.id, from: req.user.id, message, mtype, attachment });
+        try {
+            await boradcastMessage([to, req.user.id], req.user.id, { message, mtype, attachment }, "message");
+        } catch (err) {
+            logger(`[ERR]: ${err}`, true);
+        }
 
         return successResponse(res, "message sent successfully");
     } catch (error) {
