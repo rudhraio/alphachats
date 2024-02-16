@@ -4,11 +4,12 @@ import validator from "../../utils/middlewares/validator.js";
 import authorizeToken from "../../utils/middlewares/authorize.js";
 import logger from "../../utils/helpers/logger.js";
 import { notFoundResponse, serverErrorResponse, successResponse } from "../../utils/helpers/response.js";
-import { createChat, getChatByMembers, getChatsById } from "../../models/chats.model.js";
+import { createChat, getChatByMembers, getChatsById, updateChatInformation } from "../../models/chats.model.js";
 import { body } from "express-validator";
 import { getByUserId, getByUsername } from "../../models/user.model.js";
 import { createMessage } from "../../models/message.model.js";
 import { boradcastMessage } from "../../wss/socket.js";
+import { convertToDynamoFormat } from "../../utils/helpers/dynamo-converter.js";
 
 const chatsPost = express.Router();
 
@@ -24,7 +25,7 @@ chatsPost.post("/", authorizeToken, validator(validData), async (req, res) => {
     try {
         const {
             to,
-            message,
+            message = "new message",
             mtype = "text",
             ctype = "one-to-one",
             attachment = [],
@@ -53,7 +54,7 @@ chatsPost.post("/", authorizeToken, validator(validData), async (req, res) => {
                         image: touser?.image
                     }
                 ]
-                chat = await createChat({ userslist: [req?.user?.id, touser?.id], usersdetails });
+                chat = await createChat({ userslist: [req?.user?.id, touser?.id], usersdetails, message });
             }
         } else {
             chat = await getChatsById(to);
@@ -64,6 +65,18 @@ chatsPost.post("/", authorizeToken, validator(validData), async (req, res) => {
         }
 
         await createMessage({ chatid: chat?.id, from: req.user.id, message, mtype, attachment });
+        await updateChatInformation(chat?.id, "last_message", { "S": message });
+
+        const temp = chat.usersdetails.map(obj => {
+            return {
+                ...obj,
+                unread: req.user.id === obj.id ? "false" : "true"
+            };
+        });
+        await updateChatInformation(chat?.id, "usersdetails", { "L": convertToDynamoFormat(temp) });
+
+
+        // await updateChatInformation(chat?.id, "unread", { "S": "true" });
         try {
             await boradcastMessage([to, req.user.id], req.user.id, { message, mtype, attachment }, "message");
         } catch (err) {

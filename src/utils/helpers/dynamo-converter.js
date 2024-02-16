@@ -32,6 +32,19 @@ export default function convertToJson(dynamodbData) {
     });
 }
 
+
+export function convertToDynamoFormat(jsonArray) {
+    return jsonArray.map(obj => {
+        const dynamoObj = {
+            "M": {} // Start with an empty DynamoDB map
+        };
+        for (const key in obj) {
+            dynamoObj["M"][key] = { "S": obj[key] }; // Convert each property to a string
+        }
+        return dynamoObj;
+    });
+}
+
 // export default function convertToJson(items) {
 //     return items.map(item => {
 //         const convertedItem = {};

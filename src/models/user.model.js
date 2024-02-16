@@ -11,7 +11,7 @@ import convertToJson from "../utils/helpers/dynamo-converter.js";
 class Users {
     constructor(
         username,
-        status = "online",
+        userstatus = "online",
         utype = "visitor",
         ugroup = "default",
         visibility = "public",
@@ -31,7 +31,7 @@ class Users {
         this.utype = utype;
         this.ugroup = ugroup;
         this.password = password;
-        this.status = status;
+        this.userstatus = userstatus;
         this.connections = connections;
         this.active = active;
         this.visibility = visibility;

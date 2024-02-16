@@ -1,5 +1,5 @@
 import { v4 as uuid4 } from "uuid";
-import { QueryCommand } from '@aws-sdk/client-dynamodb';
+import { QueryCommand, UpdateItemCommand } from '@aws-sdk/client-dynamodb';
 import { PutCommand } from '@aws-sdk/lib-dynamodb';
 
 import logger from "../utils/helpers/logger.js";
@@ -10,14 +10,15 @@ class Chats {
     constructor(
         userslist,
         usersdetails,
+        last_message = undefined,
         ctype = "one-to-one",
         visibility = "public",
         name = undefined,
         description = undefined,
         image = undefined,
-        last_message = undefined,
         id = uuid4(),
-        active = "true"
+        active = "true",
+        unread = "false"
     ) {
         this.id = id;
         this.userslist = userslist;
@@ -28,6 +29,7 @@ class Chats {
         this.description = description;
         this.last_message = last_message;
         this.active = active;
+        this.unread = unread;
         this.visibility = visibility;
         this.createdat = new Date().toISOString();
         this.updatedat = new Date().toISOString();
@@ -41,8 +43,8 @@ const ACTIVE_INDEX = process.env.ACTIVE_INDEX;
 
 export async function createChat(data) {
     try {
-        const { userslist, usersdetails } = data;
-        const chat = new Chats(userslist, usersdetails);
+        const { userslist, usersdetails, message } = data;
+        const chat = new Chats(userslist, usersdetails, message);
 
         const params = {
             TableName: CHATS_TABLE,
@@ -127,4 +129,27 @@ export async function getChatsById(chatid) {
     }
 
     return chat;
+}
+
+
+export async function updateChatInformation(id, attributeName, value) {
+    const params = {
+        TableName: CHATS_TABLE,
+        Key: {
+            'id': { S: id }
+        },
+        UpdateExpression: `set ${attributeName} = :newValue`,
+        ExpressionAttributeValues: {
+            ':newValue': value
+        },
+        ReturnValues: 'UPDATED_NEW'
+    };
+
+    try {
+        const result = await dynamoDbClient.send(new UpdateItemCommand(params));
+        return result;
+    } catch (error) {
+        logger(`[ERR]: Error querying items:, ${error}`, true);
+        return {};
+    }
 }

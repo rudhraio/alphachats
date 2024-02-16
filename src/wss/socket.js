@@ -28,7 +28,7 @@ async function connect(event) {
         let user = await getByUserId(decoded.id, false);
         user.connections["L"] = [...user.connections["L"], { "S": event?.requestContext?.connectionId }];
         await updateUserInformation(decoded.id, "connections", user.connections);
-
+        await updateUserInformation(user.id["S"], "userstatus", { "S": "online" });
         return { statusCode: 200, body: JSON.stringify({ "status": "ok" }) };
     } catch (err) {
         logger(`[ERR]: In User Connection: ${JSON.stringify(err)}`, true);
@@ -44,6 +44,9 @@ async function disconnect(event) {
         const { connectionId } = event.requestContext;
         let user = await getUserByConnectionId(connectionId, false);
         user.connections["L"] = user.connections["L"].filter((item) => { return item["S"] !== connectionId });
+        if (user.connections["L"].length === 0) {
+            await updateUserInformation(user.id["S"], "userstatus", { "S": "offline" });
+        }
         await updateUserInformation(user.id["S"], "connections", user.connections);
 
         return { statusCode: 200, body: JSON.stringify({ "status": "ok" }) };
@@ -96,9 +99,11 @@ async function sendMessage(connections, count, payload, type, from, to) {
             ConnectionId: connections[count],
             Data: JSON.stringify({ payload, from, type, to: to })
         }
+        logger(`API params  ${JSON.stringify(params)}`, true);
+        logger(`API connections  ${JSON.stringify(connections)}`, true);
         await api.send(new PostToConnectionCommand(params));
     } catch (error) {
-        logger(`API ERROR ${JSON.stringify(error)}`, true);
+        logger(`API ERROR  ${JSON.stringify(error)}`, true);
     }
     return await sendMessage(connections, --count, payload, type, from);
 }
